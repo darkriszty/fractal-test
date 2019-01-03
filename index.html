@@ -1,0 +1,119 @@
+<html>
+
+<head>
+    <title>Fractal</title>
+</head>
+
+<body>
+    <fieldset>
+        <label for="iterations">Iterations:</label>
+        <input id="iterations" type="number" value="5" min="1" max="15" />
+        <label for="type">Type:</label>
+        <select id="type">
+            <option value="triangle">Triangle</option>
+            <option value="square">Square</option>
+        </select>
+    </fieldset>
+    <canvas id="canvas" width="600" height="600"></canvas>
+</body>
+
+<script>
+    const canvas = document.getElementById("canvas"),
+        ctx = canvas.getContext("2d"),
+        iterationsInput = document.getElementById("iterations"),
+        typeSelection = document.getElementById("type");
+
+    let typeMapping = new Map();
+    typeMapping.set("triangle", { draw: drawTriangle, split: splitTriangle});
+    typeMapping.set("square", { draw: drawSquare, split: splitSquare});
+
+    document.addEventListener("DOMContentLoaded", function () {
+        function disableFieldsetWhileRunning(targetFunc) {
+            document.querySelector("fieldset").disabled = true;
+            targetFunc();
+            document.querySelector("fieldset").disabled = false;
+        }
+        iterationsInput.onchange = (event) => disableFieldsetWhileRunning(() => updateFractal(event.target.value));
+        typeSelection.onchange = (event) => disableFieldsetWhileRunning(() => updateFractal(iterationsInput.value));
+    }, false);
+
+    updateFractal(iterationsInput.value);
+
+    function updateFractal(maxIterations) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawFractal(ctx,
+            {
+                topLeft: { x: 0, y: 0 },
+                width: canvas.width,
+                height: canvas.height
+            },
+            Number(maxIterations), 0);
+    }
+
+    function drawFractal(ctx, dimension, maxDepth, currentDepth) {
+        if (currentDepth === maxDepth) return;
+        let nextDimensions = split(dimension);
+        for (let dim of nextDimensions) {
+            draw(ctx, dim);
+            drawFractal(ctx, dim, maxDepth, currentDepth + 1);
+        }
+    }
+
+    function split(dimension) {
+        return typeMapping.get(typeSelection.value).split(dimension);
+    }
+    function draw(ctx, dimension) {
+        return typeMapping.get(typeSelection.value).draw(ctx, dimension);
+    }
+
+    function drawTriangle(ctx, dimension) {
+        ctx.moveTo(dimension.topLeft.x, dimension.topLeft.y);
+        ctx.lineTo(dimension.topLeft.x + dimension.width, dimension.topLeft.y + dimension.height);
+        ctx.lineTo(dimension.topLeft.x, dimension.topLeft.y + dimension.height);
+        ctx.lineTo(dimension.topLeft.x, dimension.topLeft.y);
+        ctx.stroke();
+    }
+
+    function drawSquare(ctx, dimension) {
+        ctx.strokeRect(dimension.topLeft.x, dimension.topLeft.y, dimension.width, dimension.height);
+    }
+
+    function splitTriangle(previousDimension) {
+        let newWidth = previousDimension.width / 2;
+        let newHeight = previousDimension.height / 2;
+        return [
+            {
+                topLeft: { x: previousDimension.topLeft.x, y: previousDimension.topLeft.y },
+                width: newWidth, height: newHeight
+            }, {
+                topLeft: { x: previousDimension.topLeft.x, y: previousDimension.topLeft.y + newHeight },
+                width: newWidth, height: newHeight
+            }, {
+                topLeft: { x: previousDimension.topLeft.x + newWidth, y: previousDimension.topLeft.y + newHeight },
+                width: newWidth, height: newHeight
+            }
+        ];
+    }
+
+    function splitSquare(previousDimension) {
+        let newWidth = previousDimension.width / 2;
+        let newHeight = previousDimension.height / 2;
+        return [
+            {
+                topLeft: { x: previousDimension.topLeft.x, y: previousDimension.topLeft.y },
+                width: newWidth, height: newHeight
+            }, {
+                topLeft: { x: previousDimension.topLeft.x, y: previousDimension.topLeft.y + newHeight },
+                width: newWidth, height: newHeight
+            }, {
+                topLeft: { x: previousDimension.topLeft.x + newWidth, y: previousDimension.topLeft.y },
+                width: newWidth, height: newHeight
+            }, {
+                topLeft: { x: previousDimension.topLeft.x + newWidth, y: previousDimension.topLeft.y + newHeight },
+                width: newWidth, height: newHeight
+            }
+        ];
+    }
+</script>
+
+</html>
